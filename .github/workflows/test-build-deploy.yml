@@ -4,15 +4,15 @@ on:
   push:
     branches:
       - main
-    paths-ignore: 
-      - README.md 
-      - AGENTS.md
+    paths: 
+      - '*'
+      - '!*.md'
   pull_request:
     branches:
       - main
-    paths-ignore: 
-      - README.md 
-      - AGENTS.md
+    paths: 
+      - '*'
+      - '!*.md'
 
 jobs:
   test:
