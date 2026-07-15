@@ -2,6 +2,8 @@
 
 Interface web de RAG (*Retrieval-Augmented Generation*) entièrement côté navigateur, construite autour de l'API expérimentale `LanguageModel` de Chrome (Gemini Nano). Aucun backend, aucune donnée transmise à un serveur externe : le modèle d'inférence et le corpus de documents restent locaux.
 
+[Voir le détails de la couverture de tests](https://nicolachoquet06250.github.io/experimental-local-rag/)
+
 ---
 
 ## Activer l'API LanguageModel
