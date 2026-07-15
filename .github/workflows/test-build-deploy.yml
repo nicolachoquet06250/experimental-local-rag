@@ -65,7 +65,7 @@ jobs:
               echo "| Status | Coverage report non disponible |"
             fi
             echo ""
-            echo "[📁 Voir le rapport de couverture détaillé](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            echo "[📁 Voir le rapport de couverture détaillé](https://nicolachoquet06250.github.io/experimental-local-rag/)"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Commit and push changes
