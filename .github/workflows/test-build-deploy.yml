@@ -28,6 +28,13 @@ jobs:
         id: test
         run: npm run test:coverage
 
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
       - name: Generate coverage summary
         run: |
           {
@@ -35,23 +42,22 @@ jobs:
             echo ""
             echo "| Metric | Result |"
             echo "|--------|--------|"
-            
-            # Try to extract coverage metrics
-            if [ -f coverage/index.html ]; then
-              LINES=$(grep -oP 'Lines\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
-              STATEMENTS=$(grep -oP 'Statements\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
-              FUNCTIONS=$(grep -oP 'Functions\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
-              BRANCHES=$(grep -oP 'Branches\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
-              
+
+            if [ -f coverage/coverage-summary.json ]; then
+              LINES=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+              STATEMENTS=$(jq '.total.statements.pct' coverage/coverage-summary.json)
+              FUNCTIONS=$(jq '.total.functions.pct' coverage/coverage-summary.json)
+              BRANCHES=$(jq '.total.branches.pct' coverage/coverage-summary.json)
+
               echo "| Lines | ${LINES}% |"
               echo "| Statements | ${STATEMENTS}% |"
               echo "| Functions | ${FUNCTIONS}% |"
               echo "| Branches | ${BRANCHES}% |"
             else
-              echo "| Status | Coverage report generated |"
+              echo "| Status | Coverage report non disponible |"
             fi
             echo ""
-            echo "[View detailed coverage report](coverage/index.html)"
+            echo "[📁 Voir le rapport de couverture détaillé](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           } >> $GITHUB_STEP_SUMMARY
 
       - name: Test success
