@@ -1,0 +1,118 @@
+name: Test, Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        id: test
+        run: npm run test:coverage
+
+      - name: Generate coverage summary
+        run: |
+          {
+            echo "## 📊 Test Coverage Report"
+            echo ""
+            echo "| Metric | Result |"
+            echo "|--------|--------|"
+            
+            # Try to extract coverage metrics
+            if [ -f coverage/index.html ]; then
+              LINES=$(grep -oP 'Lines\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
+              STATEMENTS=$(grep -oP 'Statements\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
+              FUNCTIONS=$(grep -oP 'Functions\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
+              BRANCHES=$(grep -oP 'Branches\s*:\s*\K[\d.]+(?=%)' coverage/index.html | head -1 || echo "N/A")
+              
+              echo "| Lines | ${LINES}% |"
+              echo "| Statements | ${STATEMENTS}% |"
+              echo "| Functions | ${FUNCTIONS}% |"
+              echo "| Branches | ${BRANCHES}% |"
+            else
+              echo "| Status | Coverage report generated |"
+            fi
+            echo ""
+            echo "[View detailed coverage report](coverage/index.html)"
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Test success
+        run: |
+          echo "✅ Tests passed" >> $GITHUB_STEP_SUMMARY
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+      - name: Build success
+        run: |
+          echo "✅ Build successful" >> $GITHUB_STEP_SUMMARY
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Upload files to AlwaysData
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ALWAYSDATA_HOST }}
+          username: ${{ secrets.ALWAYSDATA_USER }}
+          password: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+          source: dist/*
+          target: ${{ secrets.ALWAYSDATA_DEPLOY_PATH }}
+          strip_components: 1
+          overwrite: true
+          rm: true
+
+      - name: Deployment success
+        run: |
+          echo "## 🚀 Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Successfully deployed to AlwaysData" >> $GITHUB_STEP_SUMMARY

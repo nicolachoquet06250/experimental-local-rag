@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interface sémantique d'un RAG local utilisant l'API Prompt AI de Chrome."
+    />
+    <title>LocalMind — RAG local</title>
+  </head>
+  <body data-runtime-state="checking">
+    <a class="skip-link" href="#workspace">Aller au contenu principal</a>
+
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-sparkles" viewBox="0 0 24 24">
+        <path d="M12 3l1.25 3.75L17 8l-3.75 1.25L12 13l-1.25-3.75L7 8l3.75-1.25L12 3Z" />
+        <path d="M18 13l.8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13Z" />
+        <path d="M6 14l1.05 2.95L10 18l-2.95 1.05L6 22l-1.05-2.95L2 18l2.95-1.05L6 14Z" />
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="7" />
+        <path d="m16.5 16.5 4 4" />
+      </symbol>
+      <symbol id="icon-file" viewBox="0 0 24 24">
+        <path d="M7 3h7l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+        <path d="M14 3v5h5M9 13h6M9 17h4" />
+      </symbol>
+      <symbol id="icon-link" viewBox="0 0 24 24">
+        <path d="M10 13a5 5 0 0 0 7.07.07l2-2A5 5 0 0 0 12 4l-1.15 1.15" />
+        <path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15" />
+      </symbol>
+      <symbol id="icon-dots" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" />
+      </symbol>
+      <symbol id="icon-panel-left" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" />
+      </symbol>
+      <symbol id="icon-panel-right" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" />
+      </symbol>
+      <symbol id="icon-note" viewBox="0 0 24 24">
+        <path d="M5 4h14v16H5z" /><path d="M8 8h8M8 12h8M8 16h5" />
+      </symbol>
+      <symbol id="icon-map" viewBox="0 0 24 24">
+        <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" /><path d="M9 3v15M15 6v15" />
+      </symbol>
+      <symbol id="icon-cards" viewBox="0 0 24 24">
+        <rect x="4" y="5" width="13" height="14" rx="2" /><path d="m8 5 2-2h10v13l-3 2" />
+      </symbol>
+      <symbol id="icon-send" viewBox="0 0 24 24">
+        <path d="m3 11 18-8-8 18-2-8-8-2Z" /><path d="m11 13 10-10" />
+      </symbol>
+      <symbol id="icon-mic" viewBox="0 0 24 24">
+        <rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4" /></symbol>
+      <symbol id="icon-shield" viewBox="0 0 24 24">
+        <path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6l-7-3Z" /><path d="m9 12 2 2 4-5" />
+      </symbol>
+      <symbol id="icon-cpu" viewBox="0 0 24 24">
+        <rect x="7" y="7" width="10" height="10" rx="2" /><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3" />
+      </symbol>
+      <symbol id="icon-trash" viewBox="0 0 24 24">
+        <path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></symbol>
+      <symbol id="icon-book" viewBox="0 0 24 24">
+        <path d="M4 5a3 3 0 0 1 3-3h5v17H7a3 3 0 0 0-3 3V5Z" /><path d="M20 5a3 3 0 0 0-3-3h-5v17h5a3 3 0 0 1 3 3V5Z" />
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24">
+        <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <path d="M12 3 2.8 19h18.4L12 3Z" /><path d="M12 9v4M12 17h.01" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 11a8 8 0 1 0-2.35 5.65L20 14" /><path d="M20 6v5h-5" />
+      </symbol>
+    </svg>
+
+    <header class="app-header">
+      <div class="brand" aria-label="LocalMind">
+        <span class="brand__mark" aria-hidden="true">
+          <svg><use href="#icon-sparkles" /></svg>
+        </span>
+        <span class="brand__name">LocalMind</span>
+      </div>
+
+      <div class="document-identity">
+        <button class="icon-button header-only" type="button" aria-label="Afficher les sources">
+          <svg><use href="#icon-panel-left" /></svg>
+        </button>
+        <div class="document-identity__text">
+          <p class="eyebrow">Carnet local</p>
+          <h1>Veille — Chrome Prompt API</h1>
+        </div>
+        <button class="icon-button" type="button" aria-label="Renommer le carnet">
+          <svg><use href="#icon-dots" /></svg>
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <span class="privacy-badge">
+          <svg aria-hidden="true"><use href="#icon-shield" /></svg>
+          Données locales
+        </span>
+        <!--<button class="avatar-button" type="button" aria-label="Ouvrir le profil">NC</button>-->
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <aside class="panel panel--sources" aria-labelledby="sources-title">
+        <header class="panel__header">
+          <div>
+            <p class="eyebrow">Bibliothèque</p>
+            <h2 id="sources-title">Sources</h2>
+          </div>
+          <button class="icon-button" type="button" aria-label="Réduire le panneau des sources">
+            <svg><use href="#icon-panel-left" /></svg>
+          </button>
+        </header>
+
+        <div class="panel__body sources-body">
+          <input
+            id="source-file"
+            class="visually-hidden"
+            type="file"
+            accept="image/*,text/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf,.csv,.tsv,.md,.markdown,.json,.jsonl,.xml,.yaml,.yml"
+            multiple
+          />
+          <label class="button button--primary button--wide" for="source-file">
+            <svg aria-hidden="true"><use href="#icon-plus" /></svg>
+            Ajouter une source
+          </label>
+
+          <form class="search-field" role="search">
+            <svg aria-hidden="true"><use href="#icon-search" /></svg>
+            <label class="visually-hidden" for="source-search">Rechercher dans les sources</label>
+            <input id="source-search" name="source-search" type="search" placeholder="Rechercher" />
+          </form>
+
+          <div class="source-toolbar">
+            <label class="check-control">
+              <input id="select-all-sources" type="checkbox" />
+              <span>Tout sélectionner</span>
+            </label>
+            <span id="source-total">0 source</span>
+          </div>
+
+          <ul class="source-list" aria-label="Liste des sources">
+            <!-- Contenu statique de démonstration retiré : la liste est maintenant alimentée par les fichiers locaux. -->
+            <!--
+            <li class="source-card source-card--active">
+              <label class="source-card__check">
+                <input type="checkbox" checked />
+                <span class="visually-hidden">Inclure la documentation Prompt API</span>
+              </label>
+              <span class="source-card__icon source-card__icon--web" aria-hidden="true">
+                <svg><use href="#icon-link" /></svg>
+              </span>
+              <div class="source-card__content">
+                <strong>Prompt API — documentation</strong>
+                <span>developer.chrome.com</span>
+              </div>
+              <button class="icon-button icon-button--small" type="button" aria-label="Options de la source">
+                <svg><use href="#icon-dots" /></svg>
+              </button>
+            </li>
+
+            <li class="source-card">
+              <label class="source-card__check">
+                <input type="checkbox" checked />
+                <span class="visually-hidden">Inclure les notes de veille</span>
+              </label>
+              <span class="source-card__icon source-card__icon--pdf" aria-hidden="true">
+                <svg><use href="#icon-file" /></svg>
+              </span>
+              <div class="source-card__content">
+                <strong>Notes de veille — juillet</strong>
+                <span>PDF · 28 pages</span>
+              </div>
+              <button class="icon-button icon-button--small" type="button" aria-label="Options de la source">
+                <svg><use href="#icon-dots" /></svg>
+              </button>
+            </li>
+
+            <li class="source-card">
+              <label class="source-card__check">
+                <input type="checkbox" checked />
+                <span class="visually-hidden">Inclure le benchmark local</span>
+              </label>
+              <span class="source-card__icon source-card__icon--note" aria-hidden="true">
+                <svg><use href="#icon-note" /></svg>
+              </span>
+              <div class="source-card__content">
+                <strong>Benchmark local Gemini Nano</strong>
+                <span>Markdown · 12 ko</span>
+              </div>
+              <button class="icon-button icon-button--small" type="button" aria-label="Options de la source">
+                <svg><use href="#icon-dots" /></svg>
+              </button>
+            </li>
+
+            <li class="source-card">
+              <label class="source-card__check">
+                <input type="checkbox" checked />
+                <span class="visually-hidden">Inclure les cas d'usage</span>
+              </label>
+              <span class="source-card__icon source-card__icon--web" aria-hidden="true">
+                <svg><use href="#icon-link" /></svg>
+              </span>
+              <div class="source-card__content">
+                <strong>Cas d’usage professionnels</strong>
+                <span>web.dev</span>
+              </div>
+              <button class="icon-button icon-button--small" type="button" aria-label="Options de la source">
+                <svg><use href="#icon-dots" /></svg>
+              </button>
+            </li>
+
+            <li class="source-card">
+              <label class="source-card__check">
+                <input type="checkbox" checked />
+                <span class="visually-hidden">Inclure les limites techniques</span>
+              </label>
+              <span class="source-card__icon source-card__icon--pdf" aria-hidden="true">
+                <svg><use href="#icon-file" /></svg>
+              </span>
+              <div class="source-card__content">
+                <strong>Limites et compatibilité</strong>
+                <span>PDF · 8 pages</span>
+              </div>
+              <button class="icon-button icon-button--small" type="button" aria-label="Options de la source">
+                <svg><use href="#icon-dots" /></svg>
+              </button>
+            </li>
+            -->
+          </ul>
+        </div>
+
+        <footer class="panel__footer storage-meter">
+          <div class="storage-meter__label">
+            <span>Index local</span>
+            <strong id="storage-label">0 o / 500 Mo</strong>
+          </div>
+          <progress id="storage-progress" max="524288000" value="0">0 o sur 500 Mo</progress>
+        </footer>
+      </aside>
+
+      <section class="conversation" aria-labelledby="conversation-title">
+        <h2 id="conversation-title" class="visually-hidden">Conversation avec le corpus local</h2>
+        <header class="conversation__header">
+          <nav class="segmented-control" aria-label="Mode de consultation">
+            <button class="segmented-control__item segmented-control__item--active" type="button" aria-current="page">
+              Conversation
+            </button>
+            <button class="segmented-control__item" type="button">Notes</button>
+          </nav>
+          <button id="clear-session" class="button button--ghost button--compact" type="button">
+            <svg aria-hidden="true"><use href="#icon-trash" /></svg>
+            Effacer
+          </button>
+        </header>
+
+        <div class="conversation__scroll">
+          <section
+            id="runtime-setup"
+            class="runtime-setup"
+            data-state="checking"
+            role="status"
+            aria-live="polite"
+            aria-labelledby="runtime-title"
+          >
+            <span class="runtime-setup__visual" aria-hidden="true">
+              <svg><use href="#icon-cpu" /></svg>
+            </span>
+
+            <div class="runtime-setup__content">
+              <p class="eyebrow">Moteur local</p>
+              <h2 id="runtime-title">Vérification de l’API Prompt…</h2>
+              <p id="runtime-description">
+                LocalMind vérifie la compatibilité du navigateur et la disponibilité de Gemini Nano.
+              </p>
+
+              <ol class="runtime-checklist" aria-label="Étapes d’initialisation">
+                <li data-runtime-step="support" class="is-current">
+                  <span class="runtime-checklist__marker" aria-hidden="true">1</span>
+                  <span data-step-label>API Prompt disponible dans le navigateur</span>
+                </li>
+                <li data-runtime-step="model">
+                  <span class="runtime-checklist__marker" aria-hidden="true">2</span>
+                  <span data-step-label>Modèle local disponible</span>
+                </li>
+                <li data-runtime-step="session">
+                  <span class="runtime-checklist__marker" aria-hidden="true">3</span>
+                  <span data-step-label>Session de langage initialisée</span>
+                </li>
+              </ol>
+
+              <div id="runtime-progress-region" class="runtime-progress" hidden>
+                <div class="runtime-progress__label">
+                  <span id="runtime-progress-label">Téléchargement de Gemini Nano</span>
+                  <strong id="runtime-progress-value">0 %</strong>
+                </div>
+                <progress id="runtime-progress" max="1" value="0">0 %</progress>
+              </div>
+
+              <div class="runtime-setup__actions">
+                <button id="runtime-action" class="button button--primary" type="button" hidden>
+                  <svg aria-hidden="true"><use href="#icon-download" /></svg>
+                  <span>Installer et initialiser</span>
+                </button>
+                <button id="runtime-retry" class="button button--ghost" type="button" hidden>
+                  <svg aria-hidden="true"><use href="#icon-refresh" /></svg>
+                  Réessayer
+                </button>
+              </div>
+
+              <p id="runtime-detail" class="runtime-detail">
+                Cette vérification ne télécharge rien sans action explicite de votre part.
+              </p>
+            </div>
+          </section>
+
+          <!-- Contenu statique de démonstration de la conversation. -->
+          <!--
+          <article class="welcome-card">
+            <span class="welcome-card__icon" aria-hidden="true">
+              <svg><use href="#icon-book" /></svg>
+            </span>
+            <div>
+              <p class="eyebrow">5 sources prêtes</p>
+              <h2 id="conversation-title">Interrogez votre corpus local</h2>
+              <p>
+                Les réponses sont générées dans votre navigateur et reliées aux passages de vos documents.
+              </p>
+            </div>
+          </article>
+
+          <section class="summary-card" aria-labelledby="summary-title">
+            <header class="summary-card__header">
+              <div>
+                <p class="eyebrow">Synthèse automatique</p>
+                <h3 id="summary-title">Vue d’ensemble du corpus</h3>
+              </div>
+              <span class="status-chip">
+                <span class="status-chip__dot" aria-hidden="true"></span>
+                Indexé
+              </span>
+            </header>
+            <p>
+              Ce corpus analyse l’API Prompt intégrée à Chrome, son exécution locale via Gemini Nano,
+              les contraintes de disponibilité du modèle et plusieurs scénarios professionnels hors chatbot.
+            </p>
+            <ul class="topic-list">
+              <li>Détection de disponibilité et téléchargement du modèle</li>
+              <li>Gestion du streaming et des sessions</li>
+              <li>Confidentialité, performances et limites matérielles</li>
+            </ul>
+          </section>
+
+          <section class="suggestions" aria-labelledby="suggestions-title">
+            <h3 id="suggestions-title">Questions suggérées</h3>
+            <div class="suggestion-grid">
+              <button class="suggestion-card" type="button" disabled>
+                <span>Quelles contraintes faut-il vérifier avant de créer une session ?</span>
+                <svg aria-hidden="true"><use href="#icon-send" /></svg>
+              </button>
+              <button class="suggestion-card" type="button" disabled>
+                <span>Quels cas d’usage professionnels bénéficient réellement du local ?</span>
+                <svg aria-hidden="true"><use href="#icon-send" /></svg>
+              </button>
+              <button class="suggestion-card" type="button" disabled>
+                <span>Comment construire un pipeline RAG sans envoyer de données au serveur ?</span>
+                <svg aria-hidden="true"><use href="#icon-send" /></svg>
+              </button>
+            </div>
+          </section>
+
+          <ol class="message-list" aria-label="Conversation">
+            <li class="message message--user">
+              <article>
+                <p>Résume-moi les principaux points de vigilance pour utiliser l’API Prompt en production.</p>
+              </article>
+            </li>
+
+            <li class="message message--assistant">
+              <article>
+                <header class="message__author">
+                  <span class="assistant-mark" aria-hidden="true"><svg><use href="#icon-sparkles" /></svg></span>
+                  <strong>LocalMind</strong>
+                  <span>Généré localement</span>
+                </header>
+                <div class="message__content">
+                  <p>Les principaux points de vigilance se répartissent en quatre catégories :</p>
+                  <ol>
+                    <li>
+                      <strong>Disponibilité du modèle.</strong> L’application doit distinguer un modèle immédiatement
+                      disponible, téléchargeable ou indisponible, puis adapter l’interface.
+                    </li>
+                    <li>
+                      <strong>Geste utilisateur.</strong> Certaines opérations de téléchargement doivent être lancées
+                      depuis une interaction explicite de l’utilisateur.
+                    </li>
+                    <li>
+                      <strong>Capacité de session.</strong> Le contexte disponible est limité ; le RAG doit donc
+                      sélectionner et compacter les passages avant le prompt.
+                    </li>
+                    <li>
+                      <strong>Compatibilité.</strong> Il faut prévoir un état bloquant lisible lorsque le navigateur,
+                      le système ou le matériel ne respecte pas les prérequis.
+                    </li>
+                  </ol>
+                </div>
+                <footer class="citation-row" aria-label="Sources utilisées">
+                  <button type="button">1 · Documentation Prompt API</button>
+                  <button type="button">2 · Limites et compatibilité</button>
+                </footer>
+              </article>
+            </li>
+          </ol>
+          -->
+
+          <section id="dynamic-suggestions" class="suggestions" aria-labelledby="dynamic-suggestions-title" hidden>
+            <h3 id="dynamic-suggestions-title">Questions suggérées</h3>
+            <div id="dynamic-suggestion-grid" class="suggestion-grid" aria-live="polite"></div>
+          </section>
+        </div>
+
+        <footer class="composer-region">
+          <form class="composer">
+            <label class="visually-hidden" for="prompt">Votre question</label>
+            <textarea
+              id="prompt"
+              name="prompt"
+              disabled
+              rows="1"
+              placeholder="Posez une question sur vos sources…"
+            ></textarea>
+            <div class="composer__actions">
+              <button class="model-selector" type="button" disabled aria-label="Sélectionner le modèle">
+                <svg aria-hidden="true"><use href="#icon-cpu" /></svg>
+                Gemini Nano
+                <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+              </button>
+              <div class="composer__actions-right">
+                <span id="composer-source-count" class="source-count">0 source</span>
+                <button class="icon-button" type="button" aria-label="Dicter la question">
+                  <svg><use href="#icon-mic" /></svg>
+                </button>
+                <button class="send-button" type="submit" disabled aria-label="Envoyer la question">
+                  <svg><use href="#icon-send" /></svg>
+                </button>
+              </div>
+            </div>
+          </form>
+          <p class="composer-hint">Le modèle peut produire des erreurs. Vérifiez les citations.</p>
+        </footer>
+      </section>
+
+      <aside class="panel panel--studio" aria-labelledby="studio-title">
+        <header class="panel__header">
+          <div>
+            <p class="eyebrow">Génération</p>
+            <h2 id="studio-title">Studio</h2>
+          </div>
+          <button class="icon-button" type="button" aria-label="Réduire le studio">
+            <svg><use href="#icon-panel-right" /></svg>
+          </button>
+        </header>
+
+        <div class="panel__body studio-body">
+          <!-- Contenu statique de démonstration du Studio. -->
+          <!--
+          <section aria-labelledby="quick-actions-title">
+            <h3 id="quick-actions-title" class="section-title">Créer à partir des sources</h3>
+            <div class="studio-grid">
+              <button class="studio-card" type="button" disabled>
+                <span class="studio-card__icon studio-card__icon--blue" aria-hidden="true">
+                  <svg><use href="#icon-note" /></svg>
+                </span>
+                <span>
+                  <strong>Note de synthèse</strong>
+                  <small>Résumé structuré</small>
+                </span>
+              </button>
+              <button class="studio-card" type="button" disabled>
+                <span class="studio-card__icon studio-card__icon--violet" aria-hidden="true">
+                  <svg><use href="#icon-map" /></svg>
+                </span>
+                <span>
+                  <strong>Carte mentale</strong>
+                  <small>Concepts reliés</small>
+                </span>
+              </button>
+              <button class="studio-card" type="button" disabled>
+                <span class="studio-card__icon studio-card__icon--orange" aria-hidden="true">
+                  <svg><use href="#icon-cards" /></svg>
+                </span>
+                <span>
+                  <strong>Fiches de révision</strong>
+                  <small>Questions-réponses</small>
+                </span>
+              </button>
+              <button class="studio-card" type="button" disabled>
+                <span class="studio-card__icon studio-card__icon--green" aria-hidden="true">
+                  <svg><use href="#icon-sparkles" /></svg>
+                </span>
+                <span>
+                  <strong>Brief technique</strong>
+                  <small>Décisions et risques</small>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <section class="generated-section" aria-labelledby="generated-title">
+            <div class="section-heading-row">
+              <h3 id="generated-title" class="section-title">Productions</h3>
+              <button class="text-button" type="button">Tout voir</button>
+            </div>
+
+            <article class="artifact-card">
+              <header>
+                <span class="artifact-card__icon" aria-hidden="true"><svg><use href="#icon-note" /></svg></span>
+                <button class="icon-button icon-button--small" type="button" aria-label="Options de la production">
+                  <svg><use href="#icon-dots" /></svg>
+                </button>
+              </header>
+              <div>
+                <strong>État de l'art — Prompt API</strong>
+                <p>Architecture, compatibilité et opportunités métier.</p>
+              </div>
+              <footer>
+                <span>Il y a 12 min</span>
+                <span class="artifact-card__ready"><svg aria-hidden="true"><use href="#icon-check" /></svg> Prêt</span>
+              </footer>
+            </article>
+
+            <div class="empty-production">
+              <span aria-hidden="true"><svg><use href="#icon-sparkles" /></svg></span>
+              <p>Les prochains contenus générés apparaîtront ici.</p>
+            </div>
+          </section>
+          -->
+        </div>
+
+        <footer class="panel__footer local-runtime" role="status" aria-live="polite">
+          <span class="local-runtime__icon" aria-hidden="true"><svg><use href="#icon-cpu" /></svg></span>
+          <div>
+            <strong id="runtime-footer-title">Vérification du moteur local</strong>
+            <span id="runtime-footer-detail">Détection de l’API Prompt…</span>
+          </div>
+          <span id="runtime-footer-indicator" class="local-runtime__indicator" aria-label="Vérification en cours"></span>
+        </footer>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
