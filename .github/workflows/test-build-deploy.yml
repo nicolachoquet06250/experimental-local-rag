@@ -5,12 +5,14 @@ on:
     branches:
       - main
     paths-ignore: 
-      - '*.md'
+      - README.md 
+      - AGENTS.md
   pull_request:
     branches:
       - main
     paths-ignore: 
-      - '*.md'
+      - README.md 
+      - AGENTS.md
 
 jobs:
   test:
