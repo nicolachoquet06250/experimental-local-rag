@@ -11,6 +11,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,6 +61,60 @@ jobs:
             echo ""
             echo "[📁 Voir le rapport de couverture détaillé](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           } >> $GITHUB_STEP_SUMMARY
+
+      - name: Commit and push changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BRANCH="coverage"
+          COVERAGE_DIR="$GITHUB_WORKSPACE/coverage"
+          PUBLISH_DIR="$RUNNER_TEMP/coverage-branch"
+
+          rm -rf "$PUBLISH_DIR"
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Récupération de la branche si elle existe déjà
+          if git fetch origin \
+            "$BRANCH:refs/remotes/origin/$BRANCH"
+          then
+            git worktree add \
+              --detach \
+              "$PUBLISH_DIR" \
+              "refs/remotes/origin/$BRANCH"
+          else
+            # Première publication : création d'une branche sans parent
+            git worktree add --detach "$PUBLISH_DIR"
+            git -C "$PUBLISH_DIR" switch --orphan "$BRANCH"
+          fi
+
+          # Supprime tout le contenu actuel de la branche,
+          # sans supprimer le fichier interne .git du worktree
+          find "$PUBLISH_DIR" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            ! -name ".git" \
+            -exec rm -rf {} +
+
+          # Copie le contenu de coverage/ à la racine de la branche
+          cp -a "$COVERAGE_DIR"/. "$PUBLISH_DIR"/
+
+          git -C "$PUBLISH_DIR" add --all
+
+          if git -C "$PUBLISH_DIR" diff --cached --quiet; then
+            echo "Aucune modification du coverage"
+            exit 0
+          fi
+
+          git -C "$PUBLISH_DIR" commit \
+            -m "chore: update coverage"
+
+          git -C "$PUBLISH_DIR" push \
+            origin \
+            "HEAD:$BRANCH"
 
       - name: Test success
         run: |
