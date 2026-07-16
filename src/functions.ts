@@ -225,7 +225,7 @@ export function initializeLocalSources(): void {
       const emptyState = document.createElement("li");
       emptyState.className = "source-list__empty";
       emptyState.textContent = sources.length === 0
-        ? "Ajoutez des documents stockés sur cet appareil."
+        ? "Ajoutez des documents stockés sur cet appareil, ou glissez-les ici."
         : "Aucune source ne correspond à votre recherche.";
       sourceList.append(emptyState);
       updateControls();
@@ -505,6 +505,47 @@ export function initializeLocalSources(): void {
     status.textContent = `${selectedFiles.length} fichier${selectedFiles.length > 1 ? "s en attente" : " en attente"} d’importation locale…`;
     importQueue = importQueue
       .then(() => importFiles(selectedFiles, generation))
+      .catch((error: unknown) => {
+        console.error("Échec de l’importation locale", error);
+        status.textContent = "L’importation locale a échoué.";
+      });
+  });
+
+  let dragDepth = 0;
+
+  const isFileDrag = (event: DragEvent): boolean =>
+    Array.from(event.dataTransfer?.types ?? []).includes("Files");
+
+  sourceList.addEventListener("dragenter", (event: DragEvent) => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    dragDepth += 1;
+    sourceList.classList.add("source-list--drag-over");
+  });
+  sourceList.addEventListener("dragover", (event: DragEvent) => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  });
+  sourceList.addEventListener("dragleave", (event: DragEvent) => {
+    if (!isFileDrag(event)) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) sourceList.classList.remove("source-list--drag-over");
+  });
+  sourceList.addEventListener("drop", (event: DragEvent) => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    dragDepth = 0;
+    sourceList.classList.remove("source-list--drag-over");
+
+    const droppedFiles = Array.from(event.dataTransfer?.files ?? []);
+    const generation = sourceGeneration;
+
+    if (droppedFiles.length === 0) return;
+
+    status.textContent = `${droppedFiles.length} fichier${droppedFiles.length > 1 ? "s en attente" : " en attente"} d’importation locale…`;
+    importQueue = importQueue
+      .then(() => importFiles(droppedFiles, generation))
       .catch((error: unknown) => {
         console.error("Échec de l’importation locale", error);
         status.textContent = "L’importation locale a échoué.";
