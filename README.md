@@ -59,11 +59,14 @@ Ces navigateurs ne supportent pas l'API `LanguageModel`. Aucun flag ne permet de
 
 | Prérequis | Détail |
 |---|---|
-| **Chrome** ≥ 138 (dev/canary) | Avec le flag `LanguageModel API for Gemini Nano` activé |
-| **Gemini Nano** disponible | Le modèle doit être téléchargé ou téléchargeable sur l'appareil |
+| **Navigateur chromium** | Avec les flags adéquats activés |
+| **Gemini Nano | Phi-4-mini** disponible | Le modèle doit être téléchargé ou téléchargeable sur l'appareil |
 | **Node.js** ≥ 20 | Pour le développement local uniquement |
 
 > L'API `window.LanguageModel` est une fonctionnalité expérimentale. Elle n'est pas disponible dans Firefox, Safari, ou les versions stables de Chrome sans configuration spécifique.
+
+> ⚠️ Pour que l'API `LanguageModel` puisse télécharger et utiliser le modèle, il faut au moins 22 Go d'espace libre sur le disque contenant le profil Chrome.
+Après installation, si l'espace libre descend sous 10 Go, le navigateur supprime automatiquement le modèle local.
 
 ---
 
