@@ -27,6 +27,17 @@ async function loadModules() {
   return { functions, constants };
 }
 
+function createDragEvent(type: string, files: File[] = [], types: string[] = ["Files"]): Event {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+
+  Object.defineProperty(event, "dataTransfer", {
+    configurable: true,
+    value: { types, files, dropEffect: "none" },
+  });
+
+  return event;
+}
+
 beforeEach(() => {
   Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
 });
@@ -332,6 +343,121 @@ describe("functions.initializeLocalSources", () => {
     await vi.waitFor(() => expect(constants.localSources.length).toBe(2));
     expect(constants.localSources[0]?.file.name).toBe("note.txt");
     expect(constants.localSources[1]?.family).toBe("web");
+  });
+});
+
+describe("functions.initializeLocalSources — glisser-déposer", () => {
+  it("affiche la zone de dépôt uniquement pour un glisser de fichiers", async () => {
+    const { functions } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    sourceList.dispatchEvent(createDragEvent("dragenter", [], ["text/plain"]));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(false);
+
+    sourceList.dispatchEvent(createDragEvent("dragenter", [], ["Files"]));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+  });
+
+  it("empêche le comportement par défaut et force le dropEffect à copy sur dragover", async () => {
+    const { functions } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    const dragOverEvent = createDragEvent("dragover");
+    const preventDefaultSpy = vi.spyOn(dragOverEvent, "preventDefault");
+
+    sourceList.dispatchEvent(dragOverEvent);
+
+    expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+    expect((dragOverEvent as unknown as DragEvent).dataTransfer?.dropEffect).toBe("copy");
+
+    const ignoredEvent = createDragEvent("dragover", [], ["text/plain"]);
+    const ignoredPreventDefaultSpy = vi.spyOn(ignoredEvent, "preventDefault");
+
+    sourceList.dispatchEvent(ignoredEvent);
+
+    expect(ignoredPreventDefaultSpy).not.toHaveBeenCalled();
+  });
+
+  it("ne retire la zone de dépôt qu'une fois toutes les entrées imbriquées sorties", async () => {
+    const { functions } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    sourceList.dispatchEvent(createDragEvent("dragenter"));
+    sourceList.dispatchEvent(createDragEvent("dragenter"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+
+    sourceList.dispatchEvent(createDragEvent("dragleave"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+
+    sourceList.dispatchEvent(createDragEvent("dragleave"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(false);
+
+    sourceList.dispatchEvent(createDragEvent("dragleave"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(false);
+  });
+
+  it("ignore un dragleave qui ne concerne pas un glisser de fichiers", async () => {
+    const { functions } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    sourceList.dispatchEvent(createDragEvent("dragenter"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+
+    sourceList.dispatchEvent(createDragEvent("dragleave", [], ["text/plain"]));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+  });
+
+  it("importe les fichiers déposés et réinitialise l'état visuel", async () => {
+    const { functions, constants } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    const file = new File(["contenu"], "dropped.txt", { type: "text/plain" });
+
+    sourceList.dispatchEvent(createDragEvent("dragenter"));
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(true);
+
+    const dropEvent = createDragEvent("drop", [file]);
+    const preventDefaultSpy = vi.spyOn(dropEvent, "preventDefault");
+
+    sourceList.dispatchEvent(dropEvent);
+
+    expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+    expect(sourceList.classList.contains("source-list--drag-over")).toBe(false);
+    expect(document.querySelector(".source-upload-status")?.textContent).toContain("en attente");
+
+    await vi.waitFor(() => expect(constants.localSources.length).toBe(1));
+    expect(constants.localSources[0]?.file.name).toBe("dropped.txt");
+  });
+
+  it("ignore un dépôt sans fichiers et un dépôt qui n'en contient pas", async () => {
+    const { functions, constants } = await loadModules();
+    functions.initializeLocalSources();
+
+    const sourceList = document.querySelector(".source-list");
+    if (!sourceList) throw new Error("Liste des sources introuvable");
+
+    sourceList.dispatchEvent(createDragEvent("drop", [], ["Files"]));
+    expect(constants.localSources.length).toBe(0);
+    expect(document.querySelector(".source-upload-status")?.textContent).toBe("");
+
+    sourceList.dispatchEvent(createDragEvent("drop", [], ["text/plain"]));
+    expect(constants.localSources.length).toBe(0);
+    expect(document.querySelector(".source-upload-status")?.textContent).toBe("");
   });
 });
 
