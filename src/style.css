@@ -1766,15 +1766,15 @@
  * @function dispose d'un support navigateur encore limité.
  * @mixin / @apply ne sont actuellement pas utilisés pour les styles essentiels.
  */
-  @media (max-width: 44rem) {
-    .runtime-setup {
-      grid-template-columns: 1fr;
-    }
-
-    .runtime-setup__visual {
-      width: 2.6rem;
-    }
+@media (max-width: 44rem) {
+  .runtime-setup {
+    grid-template-columns: 1fr;
   }
+
+  .runtime-setup__visual {
+    width: 2.6rem;
+  }
+}
 
 @layer experimental {
   @function --space(--factor <number>) returns <length> {
