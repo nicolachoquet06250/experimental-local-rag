@@ -356,7 +356,12 @@ export function initializeLocalSources(): void {
 
     status.textContent = `Téléchargement de ${url.href}…`;
 
-    const response = await fetch(url.href);
+    let response: Response;
+    try {
+      response = await fetch(url.href);
+    } catch {
+      throw new Error("Ce site est protégé contre l'accès externe (CORS) et ne peut pas être ajouté.");
+    }
     if (!response.ok) {
       throw new Error(`La page a répondu avec le statut HTTP ${response.status}.`);
     }

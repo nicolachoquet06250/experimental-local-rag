@@ -417,6 +417,12 @@
     text-align: center;
   }
 
+  .source-list--drag-over {
+    outline: 2px dashed var(--brand-500, currentColor);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
   .source-card {
     display: grid;
     grid-template-columns: auto auto minmax(0, 1fr) auto;
