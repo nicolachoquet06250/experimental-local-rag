@@ -97,9 +97,6 @@
           <p class="eyebrow">Carnet local</p>
           <h1>Veille — Chrome Prompt API</h1>
         </div>
-        <button class="icon-button" type="button" aria-label="Renommer le carnet">
-          <svg><use href="#icon-dots" /></svg>
-        </button>
       </div>
 
       <div class="header-actions">
@@ -254,26 +251,35 @@
         <h2 id="conversation-title" class="visually-hidden">Conversation avec le corpus local</h2>
         <header class="conversation__header">
           <nav class="segmented-control" aria-label="Mode de consultation">
-            <button class="segmented-control__item segmented-control__item--active" type="button" aria-current="page">
+            <button id="mode-conversation" class="segmented-control__item segmented-control__item--active" type="button" aria-current="page">
               Conversation
             </button>
-            <button class="segmented-control__item" type="button">Notes</button>
+            <button id="mode-notes" class="segmented-control__item" type="button">
+              Notes
+            </button>
           </nav>
-          <button id="clear-session" class="button button--ghost button--compact" type="button">
-            <svg aria-hidden="true"><use href="#icon-trash" /></svg>
-            Effacer
-          </button>
+          <div class="conversation__header-actions">
+            <button id="reset-conversation" class="button button--ghost button--compact" type="button">
+              <svg aria-hidden="true"><use href="#icon-refresh" /></svg>
+              Réinitialiser la conversation
+            </button>
+            <button id="clear-session" class="button button--ghost button--compact" type="button">
+              <svg aria-hidden="true"><use href="#icon-trash" /></svg>
+              Effacer
+            </button>
+          </div>
         </header>
 
         <div class="conversation__scroll">
-          <section
-            id="runtime-setup"
-            class="runtime-setup"
-            data-state="checking"
-            role="status"
-            aria-live="polite"
-            aria-labelledby="runtime-title"
-          >
+          <div id="conversation-view">
+            <section
+              id="runtime-setup"
+              class="runtime-setup"
+              data-state="checking"
+              role="status"
+              aria-live="polite"
+              aria-labelledby="runtime-title"
+            >
             <span class="runtime-setup__visual" aria-hidden="true">
               <svg><use href="#icon-cpu" /></svg>
             </span>
@@ -323,7 +329,7 @@
                 Cette vérification ne télécharge rien sans action explicite de votre part.
               </p>
             </div>
-          </section>
+            </section>
 
           <!-- Contenu statique de démonstration de la conversation. -->
           <!--
@@ -424,9 +430,24 @@
           </ol>
           -->
 
-          <section id="dynamic-suggestions" class="suggestions" aria-labelledby="dynamic-suggestions-title" hidden>
-            <h3 id="dynamic-suggestions-title">Questions suggérées</h3>
-            <div id="dynamic-suggestion-grid" class="suggestion-grid" aria-live="polite"></div>
+            <section id="dynamic-suggestions" class="suggestions" aria-labelledby="dynamic-suggestions-title" hidden>
+              <div class="suggestions__header">
+                <h3 id="dynamic-suggestions-title">Questions suggérées</h3>
+                <button id="refresh-suggestions" class="text-button suggestions__refresh" type="button">
+                  <svg aria-hidden="true"><use href="#icon-refresh" /></svg>
+                  Nouvelles suggestions
+                </button>
+              </div>
+              <div id="dynamic-suggestion-grid" class="suggestion-grid" aria-live="polite"></div>
+            </section>
+          </div>
+
+          <section id="notes-view" class="notes-view" aria-labelledby="notes-title" hidden>
+            <header class="notes-view__header">
+              <h3 id="notes-title">Notes</h3>
+              <p>Vos notes sont enregistrées localement en Markdown.</p>
+            </header>
+            <markdown-wysiwyg id="notes-editor" storage-key="localmind:notes:markdown"></markdown-wysiwyg>
           </section>
         </div>
 
@@ -458,105 +479,16 @@
             </div>
           </form>
           <p class="composer-hint">Le modèle peut produire des erreurs. Vérifiez les citations.</p>
+          <div class="local-runtime composer-runtime" role="status" aria-live="polite">
+            <span class="local-runtime__icon" aria-hidden="true"><svg><use href="#icon-cpu" /></svg></span>
+            <div>
+              <strong id="runtime-footer-title">Vérification du moteur local</strong>
+              <span id="runtime-footer-detail">Détection de l’API Prompt…</span>
+            </div>
+            <span id="runtime-footer-indicator" class="local-runtime__indicator" aria-label="Vérification en cours"></span>
+          </div>
         </footer>
       </section>
-
-      <aside class="panel panel--studio" aria-labelledby="studio-title">
-        <header class="panel__header">
-          <div>
-            <p class="eyebrow">Génération</p>
-            <h2 id="studio-title">Studio</h2>
-          </div>
-          <button class="icon-button" type="button" aria-label="Réduire le studio">
-            <svg><use href="#icon-panel-right" /></svg>
-          </button>
-        </header>
-
-        <div class="panel__body studio-body">
-          <!-- Contenu statique de démonstration du Studio. -->
-          <!--
-          <section aria-labelledby="quick-actions-title">
-            <h3 id="quick-actions-title" class="section-title">Créer à partir des sources</h3>
-            <div class="studio-grid">
-              <button class="studio-card" type="button" disabled>
-                <span class="studio-card__icon studio-card__icon--blue" aria-hidden="true">
-                  <svg><use href="#icon-note" /></svg>
-                </span>
-                <span>
-                  <strong>Note de synthèse</strong>
-                  <small>Résumé structuré</small>
-                </span>
-              </button>
-              <button class="studio-card" type="button" disabled>
-                <span class="studio-card__icon studio-card__icon--violet" aria-hidden="true">
-                  <svg><use href="#icon-map" /></svg>
-                </span>
-                <span>
-                  <strong>Carte mentale</strong>
-                  <small>Concepts reliés</small>
-                </span>
-              </button>
-              <button class="studio-card" type="button" disabled>
-                <span class="studio-card__icon studio-card__icon--orange" aria-hidden="true">
-                  <svg><use href="#icon-cards" /></svg>
-                </span>
-                <span>
-                  <strong>Fiches de révision</strong>
-                  <small>Questions-réponses</small>
-                </span>
-              </button>
-              <button class="studio-card" type="button" disabled>
-                <span class="studio-card__icon studio-card__icon--green" aria-hidden="true">
-                  <svg><use href="#icon-sparkles" /></svg>
-                </span>
-                <span>
-                  <strong>Brief technique</strong>
-                  <small>Décisions et risques</small>
-                </span>
-              </button>
-            </div>
-          </section>
-
-          <section class="generated-section" aria-labelledby="generated-title">
-            <div class="section-heading-row">
-              <h3 id="generated-title" class="section-title">Productions</h3>
-              <button class="text-button" type="button">Tout voir</button>
-            </div>
-
-            <article class="artifact-card">
-              <header>
-                <span class="artifact-card__icon" aria-hidden="true"><svg><use href="#icon-note" /></svg></span>
-                <button class="icon-button icon-button--small" type="button" aria-label="Options de la production">
-                  <svg><use href="#icon-dots" /></svg>
-                </button>
-              </header>
-              <div>
-                <strong>État de l'art — Prompt API</strong>
-                <p>Architecture, compatibilité et opportunités métier.</p>
-              </div>
-              <footer>
-                <span>Il y a 12 min</span>
-                <span class="artifact-card__ready"><svg aria-hidden="true"><use href="#icon-check" /></svg> Prêt</span>
-              </footer>
-            </article>
-
-            <div class="empty-production">
-              <span aria-hidden="true"><svg><use href="#icon-sparkles" /></svg></span>
-              <p>Les prochains contenus générés apparaîtront ici.</p>
-            </div>
-          </section>
-          -->
-        </div>
-
-        <footer class="panel__footer local-runtime" role="status" aria-live="polite">
-          <span class="local-runtime__icon" aria-hidden="true"><svg><use href="#icon-cpu" /></svg></span>
-          <div>
-            <strong id="runtime-footer-title">Vérification du moteur local</strong>
-            <span id="runtime-footer-detail">Détection de l’API Prompt…</span>
-          </div>
-          <span id="runtime-footer-indicator" class="local-runtime__indicator" aria-label="Vérification en cours"></span>
-        </footer>
-      </aside>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

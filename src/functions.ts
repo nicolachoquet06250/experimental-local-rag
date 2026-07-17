@@ -1,6 +1,7 @@
 import { extractText, getDocumentProxy } from "unpdf";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import "./components/markdown-wysiwyg";
 import { 
   AVAILABILITY_TIMEOUT_MS, 
   conversationHistory, 
@@ -28,6 +29,7 @@ export function queryElement<T extends Element>(selector: string): T {
 export let availability: RuntimeAvailability = "unknown";
 export let session: LanguageModelSession | null = null;
 export let creationPromise: Promise<LanguageModelSession> | null = null;
+const CONVERSATION_RESET_EVENT = "localmind:conversation-reset";
 let readyTimer: number | null = null;
 
 export const setSession = (s: LanguageModelSession | null): void => {
@@ -566,6 +568,7 @@ export function initializeLocalSources(): void {
     sources.splice(0, sources.length);
     fileInput.value = "";
     searchInput.value = "";
+    window.dispatchEvent(new Event(CONVERSATION_RESET_EVENT));
     status.textContent = "La session locale et tous ses documents ont été effacés.";
     render();
     scheduleSuggestedPrompts();
@@ -576,6 +579,16 @@ export function initializeLocalSources(): void {
 
 let suggestedPromptsTimer: number | null = null;
 let suggestedPromptsRequestId = 0;
+let suggestedPromptsPending = false;
+
+function updateRefreshSuggestionsButtonState(): void {
+  const refreshButton = document.querySelector<HTMLButtonElement>("#refresh-suggestions");
+  if (!refreshButton) return;
+
+  const hasSelectedSources = localSources.some((source) => source.selected);
+  refreshButton.disabled = !session || !hasSelectedSources || suggestedPromptsPending;
+  refreshButton.setAttribute("aria-busy", String(suggestedPromptsPending));
+}
 
 function scheduleSuggestedPrompts(): void {
   if (suggestedPromptsTimer !== null) {
@@ -674,11 +687,15 @@ async function generateSuggestedPrompts(): Promise<void> {
   if (!session || selectedSources.length === 0) {
     suggestionsSection.hidden = true;
     suggestionsGrid.replaceChildren();
+    suggestedPromptsPending = false;
+    updateRefreshSuggestionsButtonState();
     return;
   }
 
   suggestionsSection.hidden = false;
   suggestionsGrid.replaceChildren();
+  suggestedPromptsPending = true;
+  updateRefreshSuggestionsButtonState();
 
   const loadingButton = document.createElement("button");
   loadingButton.className = "suggestion-card suggestion-card--loading";
@@ -778,6 +795,10 @@ async function generateSuggestedPrompts(): Promise<void> {
     errorMessage.textContent = "Les questions suggérées n’ont pas pu être générées.";
     suggestionsGrid.append(errorMessage);
   } finally {
+    if (requestId === suggestedPromptsRequestId) {
+      suggestedPromptsPending = false;
+      updateRefreshSuggestionsButtonState();
+    }
     suggestionRequestSession?.destroy();
   }
 }
@@ -818,26 +839,18 @@ export function initializeSidebars(): void {
         opacity 180ms ease 90ms,
         translate 320ms var(--ease-out);
     }
-    .workspace > .panel--studio > :not(.sidebar-open-button) {
-      min-width: var(--sidebar-right);
-    }
-    .workspace.sidebar-sources-closed { grid-template-columns: var(--sidebar-collapsed-size) minmax(0, 1fr) var(--sidebar-right); }
-    .workspace.sidebar-studio-closed { grid-template-columns: var(--sidebar-left) minmax(0, 1fr) var(--sidebar-collapsed-size); }
-    .workspace.sidebar-sources-closed.sidebar-studio-closed { grid-template-columns: var(--sidebar-collapsed-size) minmax(0, 1fr) var(--sidebar-collapsed-size); }
-    .workspace.sidebar-sources-closed > .panel--sources,
-    .workspace.sidebar-studio-closed > .panel--studio {
+    .workspace.sidebar-sources-closed { grid-template-columns: var(--sidebar-collapsed-size) minmax(0, 1fr); }
+    .workspace.sidebar-sources-closed > .panel--sources {
       display: grid;
       grid-template-rows: auto;
       overflow: hidden;
     }
-    .workspace.sidebar-sources-closed > .panel--sources > :not(.sidebar-open-button),
-    .workspace.sidebar-studio-closed > .panel--studio > :not(.sidebar-open-button) {
+    .workspace.sidebar-sources-closed > .panel--sources > :not(.sidebar-open-button) {
       opacity: 0;
       pointer-events: none;
       transition-delay: 0ms;
     }
     .workspace.sidebar-sources-closed > .panel--sources > :not(.sidebar-open-button) { translate: -0.75rem 0; }
-    .workspace.sidebar-studio-closed > .panel--studio > :not(.sidebar-open-button) { translate: 0.75rem 0; }
     .panel > .sidebar-open-button {
       position: absolute;
       z-index: 2;
@@ -860,14 +873,11 @@ export function initializeSidebars(): void {
     }
 
     @media (max-width: 1180px) {
-      .workspace.sidebar-sources-closed,
-      .workspace.sidebar-sources-closed.sidebar-studio-closed { grid-template-columns: var(--sidebar-collapsed-size) minmax(0, 1fr); }
-      .workspace > .panel--studio { display: none !important; }
+      .workspace.sidebar-sources-closed { grid-template-columns: var(--sidebar-collapsed-size) minmax(0, 1fr); }
     }
 
     @media (max-width: 780px) {
-      .workspace.sidebar-sources-closed > .panel--sources,
-      .workspace.sidebar-studio-closed > .panel--studio { display: none; }
+      .workspace.sidebar-sources-closed > .panel--sources { display: none; }
       .workspace > .panel.is-sidebar-open {
         position: fixed;
         z-index: 20;
@@ -876,7 +886,6 @@ export function initializeSidebars(): void {
         width: min(100%, 23rem);
         box-shadow: var(--shadow-md);
       }
-      .workspace > .panel--studio.is-sidebar-open { right: 0; left: auto; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -890,7 +899,6 @@ export function initializeSidebars(): void {
 
   const openButtons: Record<SidebarName, HTMLButtonElement> = {
     sources: createSidebarOpenButton("sources"),
-    studio: createSidebarOpenButton("studio"),
   };
 
   mobileSourcesButton.classList.add(
@@ -1626,6 +1634,17 @@ function updateComposerState(): void {
 
   composerInput.disabled = !session || conversationPending;
   sendButton.disabled = !canSubmit;
+  updateRefreshSuggestionsButtonState();
+}
+
+function setSegmentedButtonState(button: HTMLButtonElement, active: boolean): void {
+  button.classList.toggle("segmented-control__item--active", active);
+  if (active) {
+    button.setAttribute("aria-current", "page");
+    return;
+  }
+
+  button.removeAttribute("aria-current");
 }
 
 export async function sendConversationMessage(): Promise<void> {
@@ -1737,17 +1756,49 @@ export async function sendConversationMessage(): Promise<void> {
 
 export function initializeConversation(): void {
   const composerInput = queryElement<HTMLTextAreaElement>("#prompt");
-  const clearSessionButton = queryElement<HTMLButtonElement>("#clear-session");
+  const conversationModeButton = queryElement<HTMLButtonElement>("#mode-conversation");
+  const notesModeButton = queryElement<HTMLButtonElement>("#mode-notes");
+  const conversationView = queryElement<HTMLElement>("#conversation-view");
+  const notesView = queryElement<HTMLElement>("#notes-view");
+  const composerRegion = queryElement<HTMLElement>(".composer-region");
+  const refreshSuggestionsButton = queryElement<HTMLButtonElement>("#refresh-suggestions");
+  const resetConversationButton = queryElement<HTMLButtonElement>("#reset-conversation");
+
+  const setWorkspaceMode = (mode: "conversation" | "notes"): void => {
+    const showConversation = mode === "conversation";
+
+    conversationView.hidden = !showConversation;
+    notesView.hidden = showConversation;
+    composerRegion.hidden = !showConversation;
+    resetConversationButton.hidden = !showConversation;
+
+    setSegmentedButtonState(conversationModeButton, showConversation);
+    setSegmentedButtonState(notesModeButton, !showConversation);
+  };
+
+  const resetConversation = (): void => {
+    conversationHistory.splice(0, conversationHistory.length);
+    getConversationList().replaceChildren();
+    updateComposerState();
+  };
 
   getConversationList();
   composerInput.addEventListener("input", () => {
     composerInput.setCustomValidity("");
     updateComposerState();
   });
-  clearSessionButton.addEventListener("click", () => {
-    conversationHistory.splice(0, conversationHistory.length);
-    getConversationList().replaceChildren();
-    updateComposerState();
+  conversationModeButton.addEventListener("click", () => {
+    setWorkspaceMode("conversation");
   });
+  notesModeButton.addEventListener("click", () => {
+    setWorkspaceMode("notes");
+  });
+
+  refreshSuggestionsButton.addEventListener("click", () => {
+    void generateSuggestedPrompts();
+  });
+  resetConversationButton.addEventListener("click", resetConversation);
+  window.addEventListener(CONVERSATION_RESET_EVENT, resetConversation);
+  setWorkspaceMode("conversation");
   updateComposerState();
 }

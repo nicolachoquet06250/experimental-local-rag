@@ -180,7 +180,7 @@ declare global {
     
     type SourceFamily = "image" | "text" | "office" | "pdf" | "web";
 
-    type SidebarName = "sources" | "studio";
+    type SidebarName = "sources";
 
     interface SidebarConfig {
         panelSelector: string;

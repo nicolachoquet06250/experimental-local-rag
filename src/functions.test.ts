@@ -40,6 +40,8 @@ function createDragEvent(type: string, files: File[] = [], types: string[] = ["F
 
 beforeEach(() => {
   Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
+  localStorage.clear();
+  sessionStorage.clear();
 });
 
 afterEach(() => {
@@ -468,11 +470,30 @@ describe("functions.initializeConversation et sendConversationMessage", () => {
 
     constants.conversationHistory.push({ role: "user", content: "A" }, { role: "assistant", content: "B" });
 
-    const clearButton = document.querySelector<HTMLButtonElement>("#clear-session");
-    clearButton?.click();
+    const resetButton = document.querySelector<HTMLButtonElement>("#reset-conversation");
+    resetButton?.click();
 
     expect(constants.conversationHistory).toHaveLength(0);
     expect(document.querySelector("#dynamic-message-list")?.children.length).toBe(0);
+  });
+
+  it("réinitialise la conversation sans modifier le corpus", async () => {
+    const { functions, constants } = await loadModules();
+    functions.initializeConversation();
+
+    constants.localSources.push({
+      id: "src-reset",
+      file: new File(["Texte"], "doc-reset.txt", { type: "text/plain" }),
+      family: "text",
+      selected: true,
+    });
+    constants.conversationHistory.push({ role: "user", content: "A" }, { role: "assistant", content: "B" });
+
+    const resetButton = document.querySelector<HTMLButtonElement>("#reset-conversation");
+    resetButton?.click();
+
+    expect(constants.conversationHistory).toHaveLength(0);
+    expect(constants.localSources).toHaveLength(1);
   });
 
   it("bloque l'envoi sans source sélectionnée", async () => {
@@ -682,6 +703,45 @@ describe("functions.initializeConversation et sendConversationMessage", () => {
 
     expect(send.disabled).toBe(false);
   });
+
+  it("bascule vers Notes et persiste les notes markdown dans localStorage", async () => {
+    const { functions, constants } = await loadModules();
+    constants.localSources.push({
+      id: "src-note",
+      file: new File(["Texte"], "doc.txt", { type: "text/plain" }),
+      family: "text",
+      selected: true,
+    });
+    functions.initializeConversation();
+
+    const notesButton = document.querySelector<HTMLButtonElement>("#mode-notes");
+    notesButton?.click();
+
+    const notesView = document.querySelector<HTMLElement>("#notes-view");
+    const conversationView = document.querySelector<HTMLElement>("#conversation-view");
+    const composerRegion = document.querySelector<HTMLElement>(".composer-region");
+
+    expect(notesView?.hidden).toBe(false);
+    expect(conversationView?.hidden).toBe(true);
+    expect(composerRegion?.hidden).toBe(true);
+
+    const notesEditor = document.querySelector<HTMLElement>("#notes-editor");
+    const markdownModeButton = notesEditor?.shadowRoot?.querySelector<HTMLButtonElement>("#notes-mode-markdown");
+    markdownModeButton?.click();
+    await Promise.resolve();
+
+    const markdownEditor = notesEditor?.shadowRoot?.querySelector<HTMLTextAreaElement>("#notes-markdown");
+    if (!markdownEditor) throw new Error("Éditeur Markdown introuvable");
+
+    markdownEditor.value = "# Ma note\n\n- point 1";
+    markdownEditor.dispatchEvent(new Event("input", { bubbles: true }));
+
+    expect(localStorage.getItem("localmind:notes:markdown")).toBe("# Ma note\n\n- point 1");
+
+    const conversationButton = document.querySelector<HTMLButtonElement>("#mode-conversation");
+    conversationButton?.click();
+    expect(composerRegion?.hidden).toBe(false);
+  });
 });
 
 describe("fonctions avancées de disponibilité et suggestions", () => {
@@ -731,6 +791,9 @@ describe("fonctions avancées de disponibilité et suggestions", () => {
 
   it("génère et applique des suggestions dynamiques", async () => {
     const { functions, constants } = await loadModules();
+    let suggestionBatch = 0;
+
+    functions.initializeConversation();
 
     Object.defineProperty(globalThis, "LanguageModel", {
       configurable: true,
@@ -738,7 +801,12 @@ describe("fonctions avancées de disponibilité et suggestions", () => {
         availability: vi.fn(async (): Promise<PromptAvailability> => "available"),
         create: vi.fn(async () =>
           createLanguageModelSessionMock({
-            prompt: async () => JSON.stringify({ prompts: ["Question A", "Question B", "Question C", "Question D"] }),
+            prompt: async () => {
+              suggestionBatch += 1;
+              return suggestionBatch === 1
+                ? JSON.stringify({ prompts: ["Question A", "Question B", "Question C", "Question D"] })
+                : JSON.stringify({ prompts: ["Question E", "Question F", "Question G", "Question H"] });
+            },
           }),
         ),
       } satisfies LanguageModelAPI,
@@ -763,8 +831,17 @@ describe("fonctions avancées de disponibilité et suggestions", () => {
       expect(document.querySelectorAll("#dynamic-suggestion-grid .suggestion-card").length).toBe(4);
     });
 
+    expect(document.querySelector("#dynamic-suggestion-grid .suggestion-card span")?.textContent).toBe("Question A");
+
+    const refreshSuggestionsButton = document.querySelector<HTMLButtonElement>("#refresh-suggestions");
+    refreshSuggestionsButton?.click();
+
+    await vi.waitFor(() => {
+      expect(document.querySelector("#dynamic-suggestion-grid .suggestion-card span")?.textContent).toBe("Question E");
+    });
+
     const firstSuggestion = document.querySelector<HTMLButtonElement>("#dynamic-suggestion-grid .suggestion-card");
     firstSuggestion?.click();
-    expect((document.querySelector<HTMLTextAreaElement>("#prompt") as HTMLTextAreaElement).value).toBe("Question A");
+    expect((document.querySelector<HTMLTextAreaElement>("#prompt") as HTMLTextAreaElement).value).toBe("Question E");
   });
 });

@@ -30,7 +30,7 @@ export const elements = {
     session: queryElement<HTMLElement>('[data-runtime-step="session"]'),
   } satisfies Record<RuntimeStepName, HTMLElement>,
   runtimeControls: document.querySelectorAll<RuntimeControl>(
-    ".composer textarea, .model-selector, .send-button, .suggestion-card, .studio-card",
+    ".composer textarea, .model-selector, .send-button, .suggestion-card",
   ),
   composer: queryElement<HTMLFormElement>(".composer"),
 };
@@ -38,6 +38,7 @@ export const elements = {
 export const MAX_LOCAL_STORAGE_BYTES = 500 * 1024 * 1024;
 export const SOURCE_INDEX_STORAGE_KEY = "localmind:session:sources";
 export const SOURCE_DATA_STORAGE_PREFIX = "localmind:session:source:";
+export const NOTES_STORAGE_KEY = "localmind:notes:markdown";
 export const localSources: LocalSource[] = [];
 export const TEXT_EXTENSIONS = new Set([
   "txt", "md", "markdown", "csv", "tsv", "json", "jsonl", "xml",
@@ -56,12 +57,6 @@ export const SIDEBAR_CONFIG = {
     closeLabel: "Réduire le panneau des sources",
     openLabel: "Afficher les sources",
     icon: "#icon-panel-left",
-  },
-  studio: {
-    panelSelector: ".panel--studio",
-    closeLabel: "Réduire le studio",
-    openLabel: "Afficher le studio",
-    icon: "#icon-panel-right",
   },
 } as const satisfies Record<SidebarName, SidebarConfig>;
 
